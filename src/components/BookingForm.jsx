@@ -1,12 +1,34 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { fakeApiData } from "./data"; // Adjust the import path as necessary
+import Image from "next/image";
+import { CiLocationOn } from "react-icons/ci";
+import { GoClock } from "react-icons/go";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 const BookingForm = () => {
-  const [selectedCourt, setSelectedCourt] = useState(fakeApiData.courts[0].id);
-  const [selectedDate, setSelectedDate] = useState(fakeApiData.dates[0]);
+  const searchParams = useSearchParams();
+  const selectedCourt = searchParams.get("court") || fakeApiData.courts[0].id;
+  const selectedDate = searchParams.get("date") || `${fakeApiData.dates[0].date}-${fakeApiData.dates[0].month}-${fakeApiData.dates[0].year}`;
   const [selectedStartSlot, setSelectedStartSlot] = useState(null);
   const [selectedEndSlot, setSelectedEndSlot] = useState(null);
+
+  const selectedCourtName = useMemo(() => {
+    const court = fakeApiData.courts.find((court) => court.id === selectedCourt);
+    return court ? court.name : "Futsal Court";
+  }, [selectedCourt]);
 
   const handleSlotClick = (slot) => {
     if (!slot.available) return;
@@ -19,32 +41,32 @@ const BookingForm = () => {
     }
   };
 
-  const isSlotSelected = (slotTime) => {
-    if (!selectedStartSlot || !selectedEndSlot) return false;
+  const getAdjustedEndSlot = useMemo(() => {
+    if (selectedStartSlot && selectedStartSlot === selectedEndSlot) {
+      const startIndex = fakeApiData.slots.findIndex(
+        (slot) => slot.time === selectedStartSlot
+      );
+      if (startIndex !== -1 && startIndex < fakeApiData.slots.length - 1) {
+        const nextSlot = fakeApiData.slots[startIndex + 1];
+        if (nextSlot?.available) {
+          return nextSlot.time; // Use the next available slot time
+        }
+      }
+    }
+    return selectedEndSlot;
+  }, [selectedStartSlot, selectedEndSlot]);
+
+  const selectedHours = useMemo(() => {
+    const startTime = selectedStartSlot;
+    const endTime = getAdjustedEndSlot;
+
+    if (!startTime || !endTime) return 0;
 
     const startIndex = fakeApiData.slots.findIndex(
-      (slot) => slot.time === selectedStartSlot
+      (slot) => slot.time === startTime
     );
     const endIndex = fakeApiData.slots.findIndex(
-      (slot) => slot.time === selectedEndSlot
-    );
-
-    if (startIndex === -1 || endIndex === -1 || startIndex > endIndex) return false;
-
-    const selectedSlots = fakeApiData.slots.slice(startIndex, endIndex + 1);
-    return selectedSlots.some(
-      (slot) => slot.time === slotTime && slot.available
-    );
-  };
-
-  const calculateTotalPrice = () => {
-    if (!selectedStartSlot || !selectedEndSlot) return 0;
-
-    const startIndex = fakeApiData.slots.findIndex(
-      (slot) => slot.time === selectedStartSlot
-    );
-    const endIndex = fakeApiData.slots.findIndex(
-      (slot) => slot.time === selectedEndSlot
+      (slot) => slot.time === endTime
     );
 
     if (startIndex === -1 || endIndex === -1 || startIndex > endIndex) return 0;
@@ -52,12 +74,14 @@ const BookingForm = () => {
     const selectedSlots = fakeApiData.slots.slice(startIndex, endIndex + 1);
     const availableSlots = selectedSlots.filter((slot) => slot.available);
 
-    return availableSlots.length * fakeApiData.slotPrice;
-  };
+    const totalHours = availableSlots.length * 0.5; // Each slot represents 0.5 hours
 
-  const sortedSlots = [...fakeApiData.slots].sort((a, b) => {
-    return a.available === b.available ? 0 : a.available ? 1 : -1;
-  });
+    return totalHours < 1 ? 1 : totalHours; // Ensure minimum of 1 hour
+  }, [selectedStartSlot, getAdjustedEndSlot]);
+
+  const totalPrice = useMemo(() => {
+    return selectedHours * fakeApiData.slotPrice;
+  }, [selectedHours]);
 
   return (
     <div className="max-w-6xl p-2 mx-auto">
@@ -71,17 +95,18 @@ const BookingForm = () => {
         <h2 className="mb-2 text-2xl font-bold">Courts</h2>
         <div className="flex gap-4">
           {fakeApiData.courts.map((court) => (
-            <button
+            <Link
+              href={`/booking?court=${court.id}&date=${selectedDate}`}
+              scroll={false}
               key={court.id}
-              onClick={() => setSelectedCourt(court.id)}
               className={`px-4 text-sm py-2 rounded-full ${
-                selectedCourt === court.id
-                  ? "bg-primary text-white"
-                  : "bg-gray-200 text-black"
+                selectedCourt === court.id.toString()
+                  ? "bg-primary1 text-white"
+                  : "bg-white text-black border-[1px] border-[#6E3B95]"
               }`}
             >
               {court.name}
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -91,19 +116,20 @@ const BookingForm = () => {
         <h2 className="mb-2 text-sm font-bold">Select Date</h2>
         <div className="flex gap-4 overflow-x-auto scrollbar-hide scroll-snap-x">
           {fakeApiData.dates.map((date) => (
-            <button
+            <Link
+              href={`/booking?court=${selectedCourt}&date=${date.date}-${date.month}-${date.year}`}
+              scroll={false}
               key={date.id}
-              onClick={() => setSelectedDate(date)}
               className={`flex-shrink-0 scroll-snap-align-start flex flex-col justify-between items-center py-2 h-[150px] w-[calc(100%/9.7)] rounded-lg text-center ${
-                selectedDate.id === date.id
-                  ? "bg-primary text-white"
-                  : "bg-gray-200 text-black"
+                selectedDate === `${date.date}-${date.month}-${date.year}`
+                  ? "bg-primary1 text-white"
+                  : "bg-white text-black border-[1px] border-[#6E3B95]"
               }`}
             >
               <div className="text-sm font-medium">{date.month}</div>
               <div className="text-4xl font-bold">{date.date}</div>
               <div className="text-sm font-medium">{date.day}</div>
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -112,18 +138,16 @@ const BookingForm = () => {
       <div className="my-8">
         <h2 className="mb-2 text-base font-bold">Available Slots</h2>
         <div className="flex flex-wrap justify-center gap-3">
-          {sortedSlots.map((slot, index) => (
+          {fakeApiData.slots.map((slot, index) => (
             <button
               key={index}
               onClick={() => handleSlotClick(slot)}
               className={`px-4 py-2 rounded-full ${
                 selectedStartSlot === slot.time || selectedEndSlot === slot.time
-                  ? "bg-primary text-white"
-                  : isSlotSelected(slot.time)
-                  ? "bg-primary text-white"
+                  ? "bg-primary1 text-white"
                   : slot.available
-                  ? "bg-gray-200 text-black"
-                  : "bg-gray-400 text-white cursor-not-allowed"
+                  ? "bg-white text-black border-[1px] border-[#6E3B95]"
+                  : "bg-[#8c8c8c] text-white cursor-not-allowed"
               }`}
               disabled={!slot.available}
             >
@@ -134,34 +158,108 @@ const BookingForm = () => {
       </div>
 
       {/* Booking Details */}
-      <div className="flex items-center justify-between p-4 mb-4 bg-gray-100 rounded-lg">
-        <div>
-          <h3 className="text-lg font-medium">Total Amount</h3>
-          <p>
-            From: {selectedStartSlot || "--:--"} To:{" "}
-            {selectedEndSlot || "--:--"}
+      <div className="flex justify-center gap-32 mb-10 h-auto">
+        <div className="flex flex-col justify-between p-4 mb-4 bg-[#f7f4f9] h-[250px] rounded-lg">
+          <h3 className="text-2xl font-bold">Slot Details</h3>
+          <div className="bg-white p-2 w-[400px] h-[100px]">
+            <div className="flex justify-center">
+              <h1>{selectedDate}</h1>
+            </div>
+            <div className="flex justify-between">
+              <div className="flex flex-col">
+                From:
+                <p>{selectedStartSlot || "--:--"}</p>
+              </div>
+              <div className="flex flex-col">
+                To:
+                <p>{getAdjustedEndSlot || "--:--"}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-between">
+            <p className="text-base font-black text-primary1">
+              Rs: {totalPrice}
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger
+                disabled={!selectedStartSlot}
+                className={`px-6 py-2 rounded-full ${
+                  selectedStartSlot && getAdjustedEndSlot
+                    ? "bg-primary1 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                Book Now
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Booking Confirmation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex justify-between border-b-[1px]">
+                        <h1>Game</h1>
+                        <h1>{selectedCourtName}</h1>
+                      </div>
+                      <div className="flex justify-between border-b-[1px]">
+                        <h1>Date</h1>
+                        <h1>{selectedDate}</h1>
+                      </div>
+                      <div className="flex justify-between border-b-[1px]">
+                        <h1>Time</h1>
+                        <h1>
+                          {selectedStartSlot} - {getAdjustedEndSlot}
+                        </h1>
+                      </div>
+                      <div className="flex justify-between border-b-[1px]">
+                        <h1>Total Hours</h1>
+                        <h1>{selectedHours.toFixed(2)} hours</h1>
+                      </div>
+                      <div className="flex justify-between border-b-[1px]">
+                        <h1>Amount per hour</h1>
+                        <h1>Rs {fakeApiData.slotPrice}</h1>
+                      </div>
+                      <div className="flex justify-between border-b-[1px]">
+                        <h1>Total Amount</h1>
+                        <h1>Rs {totalPrice.toFixed(2)}</h1>
+                      </div>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <Link href={"/confirmation"}>
+                    <AlertDialogAction className="bg-primary1 hover:bg-primary1/70">
+                      Confirm Booking
+                    </AlertDialogAction>
+                  </Link>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 border-[1px] p-3 rounded-xl">
+          <h1 className="font-bold text-xl tracking-wide">{selectedCourtName}</h1>
+          <Image
+            src={"/ground.png"}
+            width={400}
+            height={400}
+            alt="ground"
+            className="rounded-lg"
+          />
+          <p className="flex gap-2 items-center text-xs text-black/60">
+            <span className="text-primary1">
+              <CiLocationOn />
+            </span>
+            Kashmir road, jail chorangi, Karachi, Pakistan
+          </p>
+          <p className="flex gap-2 items-center text-xs text-black/60">
+            <span className="text-primary1">
+              <GoClock />
+            </span>
+            05:00AM to 10:30PM
           </p>
         </div>
-        <p className="text-lg font-bold">Rs: {fakeApiData.slotPrice}</p>
       </div>
-
-      {/* Total Price */}
-      <div className="mt-4">
-        <h2 className="mb-2 text-lg font-medium">Total Price</h2>
-        <div className="text-xl font-bold">${calculateTotalPrice()}</div>
-      </div>
-
-      {/* Book Now */}
-      <button
-        disabled={!selectedStartSlot}
-        className={`w-full py-2 rounded-lg ${
-          selectedStartSlot
-            ? "bg-primary text-white"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-        }`}
-      >
-        Book Now
-      </button>
     </div>
   );
 };

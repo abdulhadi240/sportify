@@ -4,7 +4,7 @@ import Testimonial_Card from './Testimonial_Card'
 const Testimonial = () => {
   return (
     <div className='mt-16'>
-        <h5 className='flex justify-center text-xs font-bold tracking-wide uppercase text-primary'>Testimonials</h5>
+        <h5 className='flex justify-center text-xs font-bold tracking-wide uppercase text-primary1'>Testimonials</h5>
         <h1 className='flex justify-center  font-medium tracking-tight text-black uppercase text-[40px]'>
         WHAT THEY SAID ABOUT MAIDAN
         </h1>

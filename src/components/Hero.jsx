@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 const Hero = () => {
@@ -22,10 +23,10 @@ const Hero = () => {
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-            <h1 className="text-[40px] font-bold uppercase tracking-tighter leading-tight font-italic">Your Game, Your Rules- <br /><span className="text-primary">It’s Time</span> to Level Up <br />and organize <br /><span className="text-primary">your own tournament</span></h1>
+            <h1 className="text-[40px] font-bold uppercase tracking-tighter leading-tight font-italic">Your Game, Your Rules- <br /><span className="text-primary1">It’s Time</span> to Level Up <br />and organize <br /><span className="text-primary1">your own tournament</span></h1>
             <p className="max-w-[530px] text-black/60">Creating unforgettable sports experiences one game changing moment at a time! sports experiences one game changing moment at a time!</p>
             </div>
-            <button className="h-auto px-6 py-1 text-white rounded-full w-44 bg-primary">Book Now</button>
+            <button className="h-auto px-6 py-1 text-white rounded-full w-44 bg-primary1">Book Now</button>
 
           </div>
 

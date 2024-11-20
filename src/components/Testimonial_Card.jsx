@@ -9,7 +9,7 @@ const Testimonial_Card = () => {
           Maidan provides all the essential sports facilities. It was an
           absolutely amazing experience.
         </div>
-        <div className="text-primary bg-white z-50 absolute -top-5 left-[40%] w-8 h-8 border-[1px] items-center flex justify-center rounded-full p-2 ">
+        <div className="text-primary1 bg-white z-50 absolute -top-5 left-[40%] w-8 h-8 border-[1px] items-center flex justify-center rounded-full p-2 ">
           <FaQuoteLeft className="" />
         </div>
       </div>

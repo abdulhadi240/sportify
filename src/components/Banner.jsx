@@ -10,7 +10,7 @@ const Banner = () => {
             <h1>Start Organizing Your Tournaments</h1>
         </div>
         <div className="btn">
-        <button className="h-auto py-2 text-sm text-white rounded-full w-44 bg-primary">Call For Tournament</button>
+        <button className="h-auto py-2 text-sm text-white rounded-full w-44 bg-primary1">Call For Tournament</button>
         </div>
         </div>
         <div className="iamge">
