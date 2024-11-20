@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import { fakeApiData } from "./data"; // Adjust the import path as necessary
 import Image from "next/image";
 import { CiLocationOn } from "react-icons/ci";
@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-const BookingForm = () => {
+const BookingFormContent = () => {
   const searchParams = useSearchParams();
   const selectedCourt = searchParams.get("court") || fakeApiData.courts[0].id;
   const selectedDate = searchParams.get("date") || `${fakeApiData.dates[0].date}-${fakeApiData.dates[0].month}-${fakeApiData.dates[0].year}`;
@@ -263,5 +263,14 @@ const BookingForm = () => {
     </div>
   );
 };
+
+const BookingForm = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookingFormContent />
+    </Suspense>
+  );
+};
+
 
 export default BookingForm;
