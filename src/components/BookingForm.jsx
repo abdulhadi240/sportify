@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, {useMemo, useState } from "react";
 import { fakeApiData } from "./data"; // Adjust the import path as necessary
 import Image from "next/image";
 import { CiLocationOn } from "react-icons/ci";

@@ -2,13 +2,15 @@ import BookingForm from '@/components/BookingForm'
 import Gallery from '@/components/Gallery'
 import Hero from '@/components/Hero'
 import Testimonial from '@/components/Testimonial'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 const page = () => {
   return (
     <div>
         <Hero/>
+        <Suspense fallback={'loading ...'}>
         <BookingForm/>
+        </Suspense>
         <div className="flex justify-center">
       <Gallery/>
       </div>
