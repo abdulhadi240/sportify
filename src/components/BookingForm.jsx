@@ -21,44 +21,65 @@ import { useSearchParams } from "next/navigation";
 const BookingForm = () => {
   const searchParams = useSearchParams();
   const selectedCourt = searchParams.get("court") || fakeApiData.courts[0].id;
-  const selectedDate = searchParams.get("date") || `${fakeApiData.dates[0].date}-${fakeApiData.dates[0].month}-${fakeApiData.dates[0].year}`;
+  const selectedDate =
+    searchParams.get("date") ||
+    `${fakeApiData.dates[0].date}-${fakeApiData.dates[0].month}-${fakeApiData.dates[0].year}`;
   const [selectedStartSlot, setSelectedStartSlot] = useState(null);
   const [selectedEndSlot, setSelectedEndSlot] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const selectedCourtName = useMemo(() => {
     const court = fakeApiData.courts.find((court) => court.id === selectedCourt);
     return court ? court.name : "Futsal Court";
   }, [selectedCourt]);
 
-  const handleSlotClick = (slot) => {
-    if (!slot.available) return;
-
-    if (!selectedStartSlot || (selectedStartSlot && selectedEndSlot)) {
+  const handleStartSlotClick = (slot) => {
+    if (slot.available) {
       setSelectedStartSlot(slot.time);
-      setSelectedEndSlot(null);
-    } else if (selectedStartSlot && !selectedEndSlot) {
-      setSelectedEndSlot(slot.time);
+      setIsModalOpen(true); // Open modal to select the end time
     }
   };
 
-  const getAdjustedEndSlot = useMemo(() => {
-    if (selectedStartSlot && selectedStartSlot === selectedEndSlot) {
-      const startIndex = fakeApiData.slots.findIndex(
-        (slot) => slot.time === selectedStartSlot
-      );
-      if (startIndex !== -1 && startIndex < fakeApiData.slots.length - 1) {
-        const nextSlot = fakeApiData.slots[startIndex + 1];
-        if (nextSlot?.available) {
-          return nextSlot.time; // Use the next available slot time
-        }
-      }
+  const handleEndSlotClick = (range) => {
+    setSelectedEndSlot(range.endTime); // Set the selected end time
+    setIsModalOpen(false); // Close the modal
+  };
+
+  const filterEndRanges = useMemo(() => {
+    if (!selectedStartSlot) return [];
+
+    const startIndex = fakeApiData.slots.findIndex(
+      (slot) => slot.time === selectedStartSlot
+    );
+
+    // Start index should always exist because we validate when selecting
+    if (startIndex === -1) return [];
+
+    const ranges = [];
+    let currentStart = selectedStartSlot;
+    let currentEndIndex = startIndex + 2; // Start with 1 hour (2 x 30-minute slots)
+
+    while (currentEndIndex <= fakeApiData.slots.length) {
+      const currentSlot = fakeApiData.slots[currentEndIndex - 1];
+      const previousSlot = fakeApiData.slots[currentEndIndex - 2];
+
+      // Break loop if any required slot in the range is unavailable
+      if (!currentSlot?.available || !previousSlot?.available) break;
+
+      ranges.push({
+        startTime: currentStart,
+        endTime: currentSlot.time,
+      });
+
+      currentEndIndex++; // Increment by one slot (30 minutes)
     }
-    return selectedEndSlot;
-  }, [selectedStartSlot, selectedEndSlot]);
+
+    return ranges;
+  }, [selectedStartSlot, fakeApiData.slots]);
 
   const selectedHours = useMemo(() => {
     const startTime = selectedStartSlot;
-    const endTime = getAdjustedEndSlot;
+    const endTime = selectedEndSlot;
 
     if (!startTime || !endTime) return 0;
 
@@ -77,7 +98,7 @@ const BookingForm = () => {
     const totalHours = availableSlots.length * 0.5; // Each slot represents 0.5 hours
 
     return totalHours < 1 ? 1 : totalHours; // Ensure minimum of 1 hour
-  }, [selectedStartSlot, getAdjustedEndSlot]);
+  }, [selectedStartSlot, selectedEndSlot]);
 
   const totalPrice = useMemo(() => {
     return selectedHours * fakeApiData.slotPrice;
@@ -85,7 +106,6 @@ const BookingForm = () => {
 
   return (
     <div className="max-w-6xl p-2 mx-auto">
-      {/* Header */}
       <h1 className="flex justify-center mb-6 text-5xl font-bold">
         Booking Form
       </h1>
@@ -140,10 +160,10 @@ const BookingForm = () => {
         <div className="flex flex-wrap justify-center gap-3">
           {fakeApiData.slots.map((slot, index) => (
             <button
-              key={index}
-              onClick={() => handleSlotClick(slot)}
+              key={`slot-${index}`} // Ensure unique keys
+              onClick={() => handleStartSlotClick(slot)}
               className={`px-4 py-2 rounded-full ${
-                selectedStartSlot === slot.time || selectedEndSlot === slot.time
+                selectedStartSlot === slot.time
                   ? "bg-primary1 text-white"
                   : slot.available
                   ? "bg-white text-black border-[1px] border-[#6E3B95]"
@@ -157,7 +177,7 @@ const BookingForm = () => {
         </div>
       </div>
 
-      {/* Booking Details */}
+      {/* Slot Details */}
       <div className="flex justify-center gap-32 mb-10 h-auto">
         <div className="flex flex-col justify-between p-4 mb-4 bg-[#f7f4f9] h-[250px] rounded-lg">
           <h3 className="text-2xl font-bold">Slot Details</h3>
@@ -172,7 +192,7 @@ const BookingForm = () => {
               </div>
               <div className="flex flex-col">
                 To:
-                <p>{getAdjustedEndSlot || "--:--"}</p>
+                <p>{selectedEndSlot || "--:--"}</p>
               </div>
             </div>
           </div>
@@ -182,9 +202,9 @@ const BookingForm = () => {
             </p>
             <AlertDialog>
               <AlertDialogTrigger
-                disabled={!selectedStartSlot}
+                disabled={!selectedStartSlot || !selectedEndSlot}
                 className={`px-6 py-2 rounded-full ${
-                  selectedStartSlot && getAdjustedEndSlot
+                  selectedStartSlot && selectedEndSlot
                     ? "bg-primary1 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
@@ -207,7 +227,7 @@ const BookingForm = () => {
                       <div className="flex justify-between border-b-[1px]">
                         <h1>Time</h1>
                         <h1>
-                          {selectedStartSlot} - {getAdjustedEndSlot}
+                          {selectedStartSlot} - {selectedEndSlot}
                         </h1>
                       </div>
                       <div className="flex justify-between border-b-[1px]">
@@ -260,9 +280,34 @@ const BookingForm = () => {
           </p>
         </div>
       </div>
+
+      {/* Modal for Selecting End Slot */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            <h2 className="text-lg font-bold mb-4">Select End Time</h2>
+            <div className="flex flex-wrap gap-3">
+              {filterEndRanges.map((range, index) => (
+                <button
+                  key={`end-range-${index}`}
+                  onClick={() => handleEndSlotClick(range)}
+                  className="px-4 py-2 rounded-full bg-white text-black border-[1px] border-[#6E3B95]"
+                >
+                  {range.startTime} - {range.endTime}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-
-export default BookingForm
+export default BookingForm;
