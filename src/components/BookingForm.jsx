@@ -119,7 +119,7 @@ const BookingForm = () => {
               href={`/booking?court=${court.id}&date=${selectedDate}`}
               scroll={false}
               key={court.id}
-              className={`px-4 text-sm py-2 rounded-full ${
+              className={`px-4  text-sm py-2 rounded-full ${
                 selectedCourt === court.id.toString()
                   ? "bg-primary1 text-white"
                   : "bg-white text-black border-[1px] border-[#6E3B95]"
@@ -134,13 +134,13 @@ const BookingForm = () => {
       {/* Select Date */}
       <div className="my-8">
         <h2 className="mb-2 text-sm font-bold">Select Date</h2>
-        <div className="flex gap-4 overflow-x-auto scrollbar-hidden sm:scrollbar-none scroll-snap-x">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hidden scrollbar-custom  sm:scrollbar-none scroll-snap-x">
           {fakeApiData.dates.map((date) => (
             <Link
               href={`/booking?court=${selectedCourt}&date=${date.date}-${date.month}-${date.year}`}
               scroll={false}
               key={date.id}
-              className={`flex-shrink-0 scroll-snap-align-start flex flex-col justify-between items-center py-2 h-[150px] w-[calc(100%/9.7)] rounded-lg text-center ${
+              className={`flex-shrink-0 mb-2 scroll-snap-align-start flex flex-col justify-between items-center py-2 h-[150px] w-[calc(100%/9.7)] rounded-lg text-center ${
                 selectedDate === `${date.date}-${date.month}-${date.year}`
                   ? "bg-primary1 text-white"
                   : "bg-white text-black border-[1px] border-[#6E3B95]"
